@@ -1,14 +1,8 @@
 import xml.etree.ElementTree as etree
 import os.path
-from pprint import pprint # for debugging
 
 # the JMDict XML file contains a well-commented DTD
 # refer to it for details about the format
-
-# temporary debug function, will remove later
-def debug(entry):
-  for keb in entry.findall('./k_ele/keb'): print('KEB: ' + keb.text)
-  for reb in entry.findall('./r_ele/reb'): print('REB: ' + reb.text)
 
 # generator function that returns only common words that aren't all-kana
 # change this to change the words which get included in the deck
