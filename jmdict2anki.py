@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as etree
 import os.path
+from pprint import pprint
 
 # the JMDict XML file contains a well-commented DTD
 # refer to it for details about the format
@@ -28,17 +29,38 @@ def get_common_words(root):
     if not common: continue # ignore uncommon words
 
     # remove uncommon variants/readings
-    debug(entry)
     for k_ele in entry.findall('k_ele'):
       if not is_common(k_ele.findall('ke_pri')): entry.remove(k_ele)
     for r_ele in entry.findall('r_ele'):
       if not is_common(r_ele.findall('re_pri')): entry.remove(r_ele)
-    print('AFTER PRUNING')
-    debug(entry)
+
     yield entry
+
+# takes an entry node and converts it into one or more csv lines
+# change this if you want to change the structure of the Anki deck
+def process_word(entry):
+  # readings is { word: [reading] }
+  readings = {keb.text : [] for keb in entry.findall('./k_ele/keb')}
+
+  for r_ele in entry.findall('r_ele'):
+    if r_ele.findall('re_nokanji'): continue # this r_ele is not a reading of the word
+
+    reading = r_ele.find('reb').text
+    words = [node.text for node in r_ele.findall('re_restr')]
+    if words: # this reading is restricted to particular words in the entry
+      for word in words:
+        if word in readings: readings[word].append(reading)
+    else: # reading applies to all words in the entry
+      for word in readings: readings[word].append(reading)
+
+  #debugging output
+  pprint(readings)
+  print("***")
 
 path = os.path.join(os.path.expanduser('~'), 'JMdict_e') # change the path to point to the JMdict file
 tree = etree.parse(path)
 root = tree.getroot();
 word_generator = get_common_words(root)
-next(word_generator)
+
+for word in word_generator:
+  process_word(word)
