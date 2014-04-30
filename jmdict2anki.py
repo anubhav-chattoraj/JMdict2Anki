@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as etree
 import os.path
-from pprint import pprint
+from pprint import pprint # for debugging
 
 # the JMDict XML file contains a well-commented DTD
 # refer to it for details about the format
@@ -39,8 +39,18 @@ def get_common_words(root):
 # takes an entry node and converts it into one or more csv lines
 # change this if you want to change the structure of the Anki deck
 def process_word(entry):
-  # readings is { word: [reading] }
-  readings = {keb.text : [] for keb in entry.findall('./k_ele/keb')}
+  # readings is { word: [reading] }, info is {word: 'information'}
+  # where information is usually 'Irregular okurigana usage'
+  readings = {}
+  info = {}
+
+  for keb in entry.findall('./k_ele/keb'):
+    readings[keb.text] = [];
+    ke_inf = entry.findall('./k_ele/ke_inf')
+    if ke_inf:
+      info[keb.text] = ','.join(node.text for node in ke_inf)
+    else:
+      info[keb.text] = ''
 
   for r_ele in entry.findall('r_ele'):
     if r_ele.findall('re_nokanji'): continue # this r_ele is not a reading of the word
@@ -53,9 +63,16 @@ def process_word(entry):
     else: # reading applies to all words in the entry
       for word in readings: readings[word].append(reading)
 
-  #debugging output
-  pprint(readings)
-  print("***")
+  # If one needs to extract the meanings of the words, this is where the code for that would go
+  # The meanings are stored under the <sense> children of <entry>
+  # A <sense> can be restricted to a particular word/reading, depending on its <stagk> and <stagr> children
+  # To handle these properly, one would need to use more elaborate data structures than the two dictionaries I used
+  # Coding this is left as an exercise to whoever actually needs that data
+
+  # output each word as a line of the csv file (corresponds to a single Anki note)
+  for word in readings:
+    csv_line = '\t'.join([word, '<br/>'.join(readings[word]), info[word]])
+    print(csv_line)
 
 path = os.path.join(os.path.expanduser('~'), 'JMdict_e') # change the path to point to the JMdict file
 tree = etree.parse(path)
