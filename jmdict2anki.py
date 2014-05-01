@@ -76,8 +76,6 @@ def process_word(entry):
     entry_words.add(word)
 
   for r_ele in entry.findall('r_ele'):
-    if r_ele.findall('re_nokanji'): continue # this r_ele is not a reading of the word
-
     reading = r_ele.find('reb').text
     words = [node.text for node in r_ele.findall('re_restr')]
     if words: # this reading is restricted to particular words in the entry
