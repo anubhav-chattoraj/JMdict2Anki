@@ -30,16 +30,10 @@ def get_common_words(root):
 
     yield entry
 
-# metaclass for the AnkiData class (which follows)
-# This is just syntactic sugar; it makes 'word in AnkiData' work as expected
-class MetaAnkiData(type):
-  def __contains__(cls, word):
-    return word in cls.notes_dict
-
 # wrapper class for storing Anki notes without duplication
 # we're going to store different words written with the same kanji as a single item
 # because we're making a readings deck (not a vocab deck) and the card format is kanji → reading
-class AnkiData(metaclass= MetaAnkiData):
+class AnkiData():
   notes_dict = {} # format is 'headword': Note
 
   class Note:
@@ -72,14 +66,14 @@ class AnkiData(metaclass= MetaAnkiData):
 # takes an entry node and converts it into one or more csv lines
 # change this if you want to change the structure of the Anki deck
 def process_word(entry):
-  entry_words = [] # for storing the words whose readings are given in the <r_ele> nodes
+  entry_words = set() # for storing the words whose readings are given in the <r_ele> nodes
 
   for keb in entry.findall('./k_ele/keb'):
     word = keb.text
     ke_inf = entry.findall('./k_ele/ke_inf')
     for node in ke_inf:
       AnkiData.add_info(word, node.text)
-    entry_words.append(word)
+    entry_words.add(word)
 
   for r_ele in entry.findall('r_ele'):
     if r_ele.findall('re_nokanji'): continue # this r_ele is not a reading of the word
@@ -88,7 +82,7 @@ def process_word(entry):
     words = [node.text for node in r_ele.findall('re_restr')]
     if words: # this reading is restricted to particular words in the entry
       for word in words:
-        if word in AnkiData: AnkiData.add_reading(word, reading)
+        if word in entry_words: AnkiData.add_reading(word, reading)
     else: # reading applies to all words in the entry
       for word in entry_words: AnkiData.add_reading(word, reading)
 
@@ -107,6 +101,6 @@ word_generator = get_common_words(root)
 for word in word_generator: process_word(word)
 
 # write words to CSV file
-csvfile = open(os.path.join(homedir, 'words.csv'), 'w', encoding = 'utf-8')
+csvfile = open(os.path.join(homedir, 'words2.csv'), 'w', encoding = 'utf-8')
 AnkiData.write_to_csv(csvfile)
 csvfile.close()
