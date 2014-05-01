@@ -92,13 +92,10 @@ def process_word(entry):
 
 homedir = os.path.expanduser('~')
 jmdict = os.path.join(homedir, 'JMdict_e') # change the path to point to the JMdict file
-tree = etree.parse(jmdict)
-root = tree.getroot()
-word_generator = get_common_words(root)
 
-for word in word_generator: process_word(word)
+for word in get_common_words(etree.parse(jmdict).getroot()):
+  process_word(word)
 
 # write words to CSV file
-csvfile = open(os.path.join(homedir, 'words2.csv'), 'w', encoding = 'utf-8')
-AnkiData.write_to_csv(csvfile)
-csvfile.close()
+with open(os.path.join(homedir, 'words.csv'), 'w', encoding = 'utf-8') as csvfile:
+  AnkiData.write_to_csv(csvfile)
